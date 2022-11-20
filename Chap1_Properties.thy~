@@ -1,0 +1,97 @@
+theory Chap1_Properties
+  imports Main
+begin
+
+
+section "partial order"
+
+definition "reflex Rel \<equiv> \<forall> a. Rel a a"
+definition "antisy Rel \<equiv> \<forall> a b. Rel a b \<and> Rel b a \<longrightarrow> a = b"
+definition "transi Rel \<equiv> \<forall> a b c. Rel a b \<and> Rel b c \<longrightarrow> Rel a c"
+
+
+
+section "commutative monoid with the unit 1"
+
+definition "commu Op \<equiv> \<forall> a b. Op a b = Op b a"
+definition "unitE Op One \<equiv> \<forall> a. Op a One = a"
+definition "assoc Op \<equiv> \<forall> x y z. Op (Op x y) z = Op x (Op y z)"
+
+
+
+section "ordered monoid"
+
+definition "order Rel Op \<equiv> \<forall> x y. Rel x y \<longleftrightarrow> (Op x y = x)"
+
+
+
+section "bounded lattice"
+
+definition "idemp Op \<equiv> \<forall> a. Op a a = a"
+definition "absor Op1 Op2 \<equiv> \<forall> a b. Op1 a (Op2 a b) = a"
+definition "extre Op Ext \<equiv> \<forall> a. Op a Ext = a"
+definition "great Op Top \<equiv> extre Op Top"
+definition "least Op Bot \<equiv> extre Op Bot"
+definition "absorb Op1 Op2 \<equiv> \<forall> a b. Op1 a (Op2 a b) = a"
+(*definition "order Rel Op \<equiv> \<forall> a b . Rel a b = (Op a b = a)"*)
+
+
+
+section "complete lattice"
+
+definition infimum:: "(('a \<Rightarrow> bool) \<Rightarrow> bool) \<Rightarrow> 'a \<Rightarrow> bool" ("\<^bold>\<And>_") 
+  where "\<^bold>\<And>S \<equiv> \<lambda>w. \<forall> X. S X \<longrightarrow> X w"
+definition supremum::"(('a \<Rightarrow> bool) \<Rightarrow> bool) \<Rightarrow> 'a \<Rightarrow> bool" ("\<^bold>\<Or>_") 
+  where "\<^bold>\<Or>S \<equiv> \<lambda>w. \<exists>X. S X  \<and>  X w"
+definition contain:: "('a \<Rightarrow> bool) \<Rightarrow> ('a \<Rightarrow> bool) \<Rightarrow> bool" (infix "\<sqsubseteq>" 50) 
+  where "D \<sqsubseteq> S \<equiv>  \<forall>X. D X \<longrightarrow> S X"
+definition "infi_closed S \<equiv> \<forall>D. D \<sqsubseteq> S \<longrightarrow> S(\<^bold>\<And>D)" (*observe that D can be empty*)
+definition "supr_closed S \<equiv> \<forall>D. D \<sqsubseteq> S \<longrightarrow> S(\<^bold>\<Or>D)"
+
+
+
+section "law of residuation"
+
+definition "resid Ord Mult Impl \<equiv> 
+\<forall> x y z. Ord (Mult x y) z = Ord x (Impl y z)"
+
+
+
+section "ordered Lattice"
+
+definition "weak_idem Ord Mult \<equiv> \<forall> x . Ord x (Mult x x)"
+
+
+
+
+section "Closure Operator Conditions"
+
+type_synonym 'a cl = "('a \<Rightarrow> bool) \<Rightarrow> ('a \<Rightarrow> bool)"
+type_synonym 'a rel = "('a \<Rightarrow> bool) \<Rightarrow> ('a \<Rightarrow> bool) \<Rightarrow> bool"
+type_synonym 'a op = "('a \<Rightarrow> bool) \<Rightarrow> ('a \<Rightarrow> bool) \<Rightarrow> ('a \<Rightarrow> bool)"
+
+definition cl_expan :: "'a cl \<Rightarrow> 'a rel \<Rightarrow> bool" (*1. Expansivity *)
+  where "cl_expan Cl Rel \<equiv> \<forall>a. Rel a (Cl a)"
+definition cl_mono :: "'a cl \<Rightarrow> 'a rel \<Rightarrow> bool" (*2. Monotonicity*) 
+  where "cl_mono Cl Rel \<equiv> \<forall> a b. Rel a b \<longrightarrow> Rel (Cl a) (Cl b)"
+definition cl_idem :: "'a cl \<Rightarrow> 'a rel \<Rightarrow> bool" (*3. Idempotenz *)
+  where "cl_idem Cl Rel \<equiv> \<forall> a. Rel (Cl (Cl a)) (Cl a)"
+definition cl_distr :: "'a cl \<Rightarrow> 'a rel \<Rightarrow> 'a op \<Rightarrow> bool" (*4. Distributivity *) 
+  where "cl_distr Cl Rel Op\<equiv> \<forall> a b. Rel (Op (Cl a) (Cl b)) (Cl (Op a b))"
+
+
+
+subsection "C-Closedness"
+
+definition cClosed :: "'a cl \<Rightarrow> ('a \<Rightarrow> bool) \<Rightarrow> bool" where
+"cClosed Cl X \<equiv> \<forall> x. (Cl X) x \<longleftrightarrow> X x"
+
+definition cClosedSet 
+:: "'a cl \<Rightarrow> (('a \<Rightarrow> bool) \<Rightarrow> bool) \<Rightarrow> (('a \<Rightarrow> bool) \<Rightarrow> bool)" where
+"cClosedSet Cl Lat \<equiv> \<lambda> X. Lat X \<and> cClosed Cl X"
+
+definition cClosedOp :: "'a cl \<Rightarrow> 'a op \<Rightarrow> bool" where
+"cClosedOp Cl Op \<equiv> \<forall> X Y. cClosed Cl X \<and> cClosed Cl Y \<longrightarrow> cClosed Cl (Op X Y)"
+
+
+end

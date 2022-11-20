@@ -2,10 +2,6 @@ theory Chap1_Proposition3
   imports Main Chap1_Properties
 begin
 
-declare[[smt_timeout=30]]
-sledgehammer_params[isar_proof=false]
-nitpick_params[assms=true, user_axioms=true, show_all, expect=genuine, format=3, atoms=a b c d] (*default Nitpick settings*)
-
 
 section "commutative residuated PowerSet Lattice Definition"
 
@@ -41,12 +37,10 @@ p_assoc_mult: "assoc (\<^bold>\<star>\<^sub>p)" and
 
 (* ordered monoid *)
 p_ordered: "order (\<^bold>\<le>\<^sub>p) (\<^bold>\<star>\<^sub>p)" and
-
-(*
 p_refl_order: "reflex (\<^bold>\<le>\<^sub>p)" and
 p_antisy_order: "antisy (\<^bold>\<le>\<^sub>p)" and
 p_transi_order: "transi (\<^bold>\<le>\<^sub>p)" and
-*)
+
 
 (*  bounded lattice for Meet
 definition "commu Op \<equiv> \<forall> a b. Op a b = Op b a"
@@ -80,28 +74,6 @@ definition "resid Ord Mult Impl \<equiv>
 p_resid_law: "resid (\<^bold>\<le>\<^sub>p) (\<^bold>\<star>\<^sub>p) (\<^bold>\<Rrightarrow>\<^sub>p)"
 
 
-lemma "reflex (\<^bold>\<le>\<^sub>p)"
-  unfolding reflex_def
-  using p_ordered
-  oops
-
-lemma "antisy (\<^bold>\<le>\<^sub>p)"
-  unfolding antisy_def
-  using p_ordered
-  oops
-
-lemma "transi (\<^bold>\<le>\<^sub>p)"
-  unfolding transi_def
-  using p_ordered
-  oops
-
-
-
-(*
-definition "reflex Rel \<equiv> \<forall> a. Rel a a"
-definition "antisy Rel \<equiv> \<forall> a b. Rel a b \<and> Rel b a \<longrightarrow> a = b"
-definition "transi Rel \<equiv> \<forall> a b c. Rel a b \<and> Rel b c \<longrightarrow> Rel a c"
-*)
 
 
 
@@ -268,17 +240,13 @@ lemma c_unitE_mult:
     using p_refl_order p_antisy_order p_transi_order
     by (metis assms cClosed_def cl_expan cl_expan_def commu_def order_def p_commu_mult p_idemp_mult p_ordered unitE_def)
 qed
-
-
 lemma c_assoc_mult: 
   assumes "cClosed ClOp a"
   assumes "cClosed ClOp b"
   assumes "cClosed ClOp c"
   shows "((a \<^bold>\<star>[ClOp] b) \<^bold>\<star>[ClOp] c) = (a \<^bold>\<star>[ClOp] (b \<^bold>\<star>[ClOp] c))"
-  unfolding  c_mult_def  p_assoc_mult assms 
-  using assoc_def
-  sledgehammer(assms(1) assms(2) assms(3))
-  by (smt (z3) assms(1) assms(2) assms(3) c_closed_one c_mult_def c_unitE_mult cl_expan cl_expan_def cl_mono cl_mono_def commu_def order_def p_assoc_mult p_commu_mult p_ordered)
+  apply (unfold c_mult_def)
+  using p_assoc_mult assms
   oops
 (*  by (smt (z3) assoc_def cl_distr cl_distr_def cl_expan cl_expan_def cl_idem cl_idem_def cl_mono cl_mono_def commu_def order_def p_commu_mult p_ordered)*)
 
@@ -296,12 +264,12 @@ lemma c_assoc_meet:
   assumes "cClosed ClOp b"
   assumes "cClosed ClOp c"
   shows "((a \<^bold>\<inter>[ClOp] b) \<^bold>\<inter>[ClOp] c) = (a \<^bold>\<inter>[ClOp] (b \<^bold>\<inter>[ClOp] c))"
-  unfolding c_meet_def
+  apply (unfold c_meet_def)
   using p_commu_meet c_closed_meet antisy_def assms 
         c_meet_def c_mult_def c_unitE_mult cl_expan 
         cl_expan_def cl_idem cl_idem_def idemp_def 
         p_antisy_order p_idemp_meet
-  nitpick
+  oops
 
 lemma c_idem_meet: 
   assumes "cClosed ClOp a"

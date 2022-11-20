@@ -1,0 +1,271 @@
+theory Chap1_DataStructure_BooleanAlgebra
+  imports 
+    Main 
+    "Deriving/Comparator_Generator/Compare_Order_Instances"
+begin
+
+section "4 element term algebra"
+
+datatype s =
+    S1 | S2 
+    | Meet s s (infixr "\<^bold>\<inter>" 55)
+    | Join s s (infixr "\<^bold>\<union>" 55)
+    | Nega s ("\<^bold>\<not> _" 55)
+    | Zero ("\<^bold>0")
+    | One ("\<^bold>1")
+
+thm "s.induct"
+thm "s.rec"
+(* derive lexicographic ordering for datatype definition by given package *)
+derive compare_order s
+thm add_ac
+
+
+
+section "suggestion:
+powerset representation as boolean algebra interpretation 
+(sometime also called 'the shallow embedding method'),
+maybe  as a Functor formalizable ..."
+
+datatype c = C1 | C2
+
+fun translate :: "s \<Rightarrow> (c \<Rightarrow> bool)" where
+"translate S1 = (\<lambda> c. c = C1)" |
+"translate S2 = (\<lambda> c. c = C2)" |
+"translate (Meet s1 s2) = (\<lambda> c. (translate s1) c \<and> (translate s2) c)" |
+"translate (Join s1 s2) = (\<lambda> c. (translate s1) c \<or> (translate s2) c)" |
+"translate (Nega x) = (\<lambda> c. \<not> (translate x) c)" |
+"translate Zero = (\<lambda> _. False)" |
+"translate One = (\<lambda> _. True)"
+
+
+
+
+section "Boolsche Algebra Conditions"
+(*
+definition "comm Op \<equiv> \<forall> a b. Op a b = Op b a"
+definition "asso Op \<equiv> \<forall> a b c. Op (Op a b) c = Op a (Op b c)"
+definition "idem Op \<equiv> \<forall> a. Op a a = a"
+definition "dist Op1 Op2 \<equiv> \<forall> a b c. Op1 a (Op2 b c) = Op2 (Op1 a b) (Op1 a c)"
+definition "neutr Op Unit \<equiv> \<forall> a. Op a Unit = a"
+definition "extr Op Unit \<equiv> \<forall> a. Op a Unit = a"
+definition "invol Op \<equiv> \<forall> a. Op (Op a) = a"
+definition "deMorg Neg Op1 Op2 \<equiv> \<forall> a b. Neg (Op1 a b) = Op2 (Neg a) (Neg b)"
+definition "compl Op Neg Unit \<equiv> \<forall> a. Op a (Neg a) = Unit"
+definition "duali Neg Unit1 Unit2 \<equiv> (Neg Unit1) = Unit2"
+definition "absorb Op1 Op2 \<equiv> \<forall> a b. Op1 a (Op2 a b) = a"
+*)
+
+definition "comm Op a b \<equiv> Op a b = Op b a"
+definition "asso Op a b c \<equiv> Op (Op a b) c = Op a (Op b c)"
+definition "idem Op a \<equiv> Op a a = a"
+definition "dist Op1 Op2 a b c \<equiv> Op1 a (Op2 b c) = Op2 (Op1 a b) (Op1 a c)"
+definition "neutr Op Unit a \<equiv> Op a Unit = a"
+definition "extr Op Unit a \<equiv> Op a Unit = a"
+definition "invol Op a \<equiv> Op (Op a) = a"
+definition "deMorg Neg Op1 Op2 a b \<equiv> Neg (Op1 a b) = Op2 (Neg a) (Neg b)"
+definition "compl Op Neg Unit a \<equiv> Op a (Neg a) = Unit"
+definition "duali Neg Unit1 Unit2 \<equiv> (Neg Unit1) = Unit2"
+definition "absorb Op1 Op2 a b \<equiv> Op1 a (Op2 a b) = a"
+
+(* dualizable rules also explicit ? *)
+
+definition isBoolAlg :: 
+"('a \<Rightarrow> 'a \<Rightarrow> 'a) \<Rightarrow> ('a \<Rightarrow> 'a \<Rightarrow> 'a) \<Rightarrow> ('a \<Rightarrow> 'a) \<Rightarrow> 'a \<Rightarrow> 'a \<Rightarrow> 'a \<Rightarrow> 'a \<Rightarrow> 'a \<Rightarrow> bool" where
+"isBoolAlg M_Op J_Op N_Op Z_Op O_Op a b c\<equiv>
+comm M_Op a b \<and> asso M_Op a b c \<and> idem M_Op a \<and> dist M_Op J_Op a b c \<and> 
+neutr M_Op O_Op a \<and> extr J_Op Z_Op a \<and> invol N_Op a \<and>
+deMorg N_Op M_Op J_Op a b \<and> compl M_Op N_Op Z_Op a \<and>
+duali N_Op O_Op Z_Op \<and> absorb M_Op J_Op a b"
+
+
+
+subsection "encoding with a definition and the refl/sym/trans-closuse"
+
+
+type_synonym 's rel = "'s \<Rightarrow> 's \<Rightarrow> bool"
+
+inductive boolALG :: "s rel" where
+commu: "\<And> a b. boolALG (Meet a b) (Meet b a)" |
+assoc: "\<And> a b c. boolALG (Meet (Meet a b) c) (Meet a (Meet b c))" |
+idem: "\<And> a. boolALG (Meet a a) a" |
+distr: "\<And> a b c. boolALG (Meet a (Join b c)) (Join (Meet a b) (Meet a c))" |
+neutr: "\<And> a. boolALG (Meet a One) a" |
+extr: "\<And> a. boolALG (Join a Zero) a" |
+invol: "\<And> a. boolALG (Nega (Nega a)) a" |
+deMorg: "\<And> a. boolALG (Nega (Meet a b)) (Join (Nega a) (Nega b))" |
+compl: "\<And> a. boolALG (Meet a (Nega a)) Zero" |
+duali: "boolALG (Nega One) Zero" |
+absorb: "\<And> a b. boolALG (Meet a (Join a b)) b" |
+congJ: "\<And> s1 s2 s3 s4. boolALG s1 s2 \<and> boolALG s3 s4 
+      \<Longrightarrow> boolALG (Join s1 s3) (Join s2 s4)"  |
+congM: "\<And> s1 s2 s3 s4. boolALG s1 s2 \<and> boolALG s3 s4 
+      \<Longrightarrow> boolALG (Meet s1 s3) (Meet s2 s4)"
+
+(* possibly miss the dual rules *)
+
+
+inductive equivRel :: "'s rel \<Rightarrow> 's rel"
+  for R :: "'s rel" where
+intro: "\<And> s1 s2. R s1 s2 \<Longrightarrow> equivRel R s1 s2" |
+refl: "\<And> s1. equivRel R s1 s1" |
+symm: "\<And> s1 s2. equivRel R s1 s2 \<Longrightarrow> equivRel R s2 s1" |
+trans: "\<And> s1 s2 s3. \<lbrakk> equivRel R s1 s2
+                    ; equivRel R s2 s3 \<rbrakk>
+                    \<Longrightarrow> equivRel R s1 s3"
+
+
+subsection "referencing one equivalence class"
+
+definition classRef :: "'s rel \<Rightarrow> 's \<Rightarrow> ('s \<Rightarrow> bool)" where
+"classRef laws Representative \<equiv> 
+ \<lambda>x. equivRel laws Representative x"
+
+(* gives me the canonical element *)
+definition canonElem :: "'s rel \<Rightarrow> 's \<Rightarrow> 's" where
+"canonElem R x \<equiv> SOME y. equivRel R x y "
+definition isCanonElem :: "'s rel \<Rightarrow> 's \<Rightarrow> bool" where
+"isCanonElem R x \<equiv> canonElem R x = x"
+
+(* collection of the canonical elements represents equivalent-classes*)
+definition "equiClasses \<equiv> canonElem"
+
+
+
+subsection "referencing minimal element of equivalence class"
+
+definition minimalClassElem :: "s rel \<Rightarrow> s rel" where
+"minimalClassElem R x min_elem \<equiv>
+classRef R x min_elem \<and> ( \<forall> e. classRef R x e \<longrightarrow> min_elem \<le> e )"
+
+
+subsection "proofing BoolAlg laws"
+
+lemma isBoolAlgLemma:
+  shows "\<forall> a b c . 
+(isCanonElem boolALG a \<and> isCanonElem boolALG b \<and> isCanonElem boolALG c)
+\<longrightarrow> isBoolAlg Meet Join Nega Zero One a b c"
+  oops
+
+(* ...tbc... *)
+
+
+
+
+section "Filter, Ultrafilter"
+
+(* how to state this in term algebra *)
+
+
+
+
+
+section "OPTION 4: (maybe) encode as inductive predicate without 'datatype' command"
+
+
+(* is this immitating the "datatype" construction from above ? *)
+(* or is it even "purer" or preferrable as seen in the other options ? *)
+
+
+typedecl a
+type_synonym point_set = "nat \<Rightarrow> bool"
+type_synonym var_set = "nat \<Rightarrow> bool"
+
+consts a_point :: "nat \<Rightarrow> a" ("\<llangle>_\<rrangle>\<^sub>a" 55)
+consts a_var :: "nat \<Rightarrow> a" ("\<guillemotleft>_\<guillemotright>\<^sub>a" 55)
+consts a_meet :: "a \<Rightarrow> a \<Rightarrow> a" (infixr" \<^bold>\<inter>\<^sub>a " 55)
+consts a_join :: "a \<Rightarrow> a \<Rightarrow> a" (infixr "\<^bold>\<union>\<^sub>a" 55)
+consts a_prod :: "a \<Rightarrow> a \<Rightarrow> a" (infixr "\<^bold>\<cdot>\<^sub>a" 55)
+consts a_impl :: "a \<Rightarrow> a \<Rightarrow> a" (infixr "\<^bold>\<rightarrow>\<^sub>a" 55)
+consts a_zero :: a ("\<^bold>0\<^sub>a")
+consts a_one :: "a" ("\<^bold>1\<^sub>a")
+consts a_bot :: a ("\<^bold>\<bottom>\<^sub>a")
+consts a_top :: a ("\<^bold>\<top>\<^sub>a")
+
+
+
+inductive carrierALG :: "point_set \<Rightarrow> var_set \<Rightarrow> (a \<Rightarrow> bool)" 
+  for p_set :: point_set
+  and v_set :: var_set 
+where
+points: "\<And> p. p_set p \<Longrightarrow> carrierALG p_set v_set (\<llangle>p\<rrangle>\<^sub>a)" |
+vars: "\<And> p. v_set p \<Longrightarrow> carrierALG p_set v_set (\<guillemotleft>p\<guillemotright>\<^sub>a)" |
+meet: "\<And> s1 s2. carrierALG p_set v_set s1 \<and> carrierALG p_set v_set s2 
+            \<Longrightarrow> carrierALG p_set v_set (s1 \<^bold>\<inter>\<^sub>a s2)" |
+join: "\<And> s1 s2. carrierALG p_set v_set s1 \<and> carrierALG p_set v_set s2 
+            \<Longrightarrow> carrierALG p_set v_set (s1 \<^bold>\<union>\<^sub>a s2)" |
+prod: "\<And> s1 s2. carrierALG p_set v_set s1 \<and> carrierALG p_set v_set s2 
+            \<Longrightarrow> carrierALG p_set v_set (s1 \<^bold>\<cdot>\<^sub>a s2)" |
+impl: "\<And> s1 s2. carrierALG p_set v_set s1 \<and> carrierALG p_set v_set s2 
+            \<Longrightarrow> carrierALG p_set v_set (s1 \<^bold>\<rightarrow>\<^sub>a s2)" |
+zero: "carrierALG p_set v_set \<^bold>0\<^sub>a" |
+one: "carrierALG p_set v_set \<^bold>1\<^sub>a" |
+bot: "carrierALG p_set v_set \<^bold>\<bottom>\<^sub>a" |
+top: "carrierALG p_set v_set \<^bold>\<top>\<^sub>a" 
+
+
+(* precising the differences of these induct rules *)
+thm "carrierALG.induct"
+thm "carrierALG.cases"
+thm "s.induct"
+
+
+
+type_synonym alg = "a \<Rightarrow> bool"
+
+inductive carrierEQUIV :: "alg \<Rightarrow> a \<Rightarrow> a \<Rightarrow> bool" 
+   for ALG :: alg
+   where
+intro: "\<And> a. ALG a \<Longrightarrow> carrierEQUIV ALG a a" |
+symm: "\<And> a1 a2. carrierEQUIV ALG a1 a2 \<Longrightarrow> carrierEQUIV ALG a2 a1" |
+trans: "\<And> a1 a2 a3. \<lbrakk> carrierEQUIV ALG a1 a2; carrierEQUIV ALG a2 a3 \<rbrakk> \<Longrightarrow> carrierEQUIV ALG a1 a3" |
+assoc: "\<And> a1 a2 a3. carrierEQUIV ALG (a1 \<^bold>\<cdot>\<^sub>a (a2 \<^bold>\<cdot>\<^sub>a a3)) ((a1 \<^bold>\<cdot>\<^sub>a a2) \<^bold>\<cdot>\<^sub>a a3)" |
+unitl: "\<And> a. carrierEQUIV ALG (a \<^bold>\<cdot>\<^sub>a \<^bold>1\<^sub>a) a"
+ (* ... tbc continued with other rules *)
+
+
+
+(* referencing elements/classes would be the same as in OPTION 2*)
+
+
+
+
+
+
+section "quotient exercise for Ints from Nats"
+
+definition intRel :: "(nat * nat) => (nat * nat) => bool" where
+  "intRel  \<equiv> \<lambda> (x, y) (u, v). (x + v = u + y)"
+
+lemma intRel_iff [simp]: "intRel (x,y) (u,v) \<longleftrightarrow> x + v = u + y"
+proof
+  show "intRel (x, y) (u, v) \<Longrightarrow> x + v = u + y"
+    by (auto simp: intRel_def)
+  show "x + v = u + y \<Longrightarrow> intRel (x, y) (u, v)"
+    by (auto simp: intRel_def)
+qed
+
+quotient_type int = "nat * nat" / "intRel"
+  morphisms Rep_Integ Abs_Integ
+proof (rule equivpI)
+  show "reflp intRel" by (auto simp: reflp_def)
+  show "symp intRel" by (auto simp: symp_def)
+  show "transp intRel" by (auto simp: transp_def)
+qed
+
+
+find_theorems "Abs_Integ" 
+find_theorems name: "Int.plus_int*"
+
+lift_definition int_plus:: "int \<Rightarrow> int \<Rightarrow> int"
+  is "\<lambda>(a,b)(c,d). (a+c, b+d)"
+  apply  clarify
+  by simp
+
+lemma plus_comm: "int_plus x y = int_plus y x"
+  apply transfer
+  apply clarify
+  by (simp add: intrel_def)
+
+
+end
